@@ -11,6 +11,7 @@ class ViewController: NSViewController {
     
     @IBOutlet weak var intervalTextField: NSTextField!
     @IBOutlet weak var button: NSButtonCell!
+    @IBOutlet weak var isRightClick: NSButton!
     
     var autoClicker = AutoClicker()
     var isAutoClickerRunning = false
@@ -62,7 +63,7 @@ class ViewController: NSViewController {
             button.title = "Stop Auto-Clicker"
             interval = max(0.001, interval)
             
-            autoClicker.start(interval: interval)
+            autoClicker.start(interval: interval, isRightClick: isRightClick.state == .on)
 
             isAutoClickerRunning = true
         }

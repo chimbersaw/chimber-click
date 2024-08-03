@@ -12,13 +12,13 @@ class AutoClicker {
     private var timer: DispatchSourceTimer?
     private var backgroundTask: NSObjectProtocol?
 
-    func start(interval: TimeInterval) {
+    func start(interval: TimeInterval, isRightClick: Bool) {
         beginBackgroundTask()
         
         let timer = DispatchSource.makeTimerSource()
         timer.schedule(deadline: .now(), repeating: interval)
         timer.setEventHandler { [weak self] in
-            self?.performAutoclick()
+            self?.performAutoclick(isRightClick: isRightClick)
         }
         timer.resume()
         self.timer = timer
@@ -31,22 +31,40 @@ class AutoClicker {
     }
     
     private func beginBackgroundTask() {
-        backgroundTask = ProcessInfo.processInfo.beginActivity(options: [.userInitiatedAllowingIdleSystemSleep], reason: "AutoClicker background task")
+        backgroundTask = ProcessInfo.processInfo.beginActivity(
+            options: [.userInitiatedAllowingIdleSystemSleep],
+            reason: "AutoClicker background task"
+        )
     }
 
     private func endBackgroundTask() {
-        if let backgroundTask = backgroundTask {
-            ProcessInfo.processInfo.endActivity(backgroundTask)
+        if let task = backgroundTask {
+            ProcessInfo.processInfo.endActivity(task)
             self.backgroundTask = nil
         }
     }
 
-    private func performAutoclick() {
+    private func performAutoclick(isRightClick: Bool) {
         let mouseLocation = NSEvent.mouseLocation
         let screenHeight = NSScreen.main?.frame.height ?? 0
         let flippedMouseLocation = CGPoint(x: mouseLocation.x, y: screenHeight - mouseLocation.y)
-        let mouseEvent = CGEvent(mouseEventSource: nil, mouseType: .leftMouseDown, mouseCursorPosition: flippedMouseLocation, mouseButton: .left)
-        let mouseReleaseEvent = CGEvent(mouseEventSource: nil, mouseType: .leftMouseUp, mouseCursorPosition: flippedMouseLocation, mouseButton: .left)
+
+        let mouseDownType: CGEventType = isRightClick ? .rightMouseDown : .leftMouseDown
+        let mouseUpType: CGEventType = isRightClick ? .rightMouseUp : .leftMouseUp
+        let mouseButton: CGMouseButton = isRightClick ? .right : .left
+
+        let mouseEvent = CGEvent(
+            mouseEventSource: nil,
+            mouseType: mouseDownType,
+            mouseCursorPosition: flippedMouseLocation,
+            mouseButton: mouseButton
+        )
+        let mouseReleaseEvent = CGEvent(
+            mouseEventSource: nil,
+            mouseType: mouseUpType,
+            mouseCursorPosition: flippedMouseLocation,
+            mouseButton: mouseButton
+        )
 
         mouseEvent?.post(tap: .cghidEventTap)
         mouseReleaseEvent?.post(tap: .cghidEventTap)
